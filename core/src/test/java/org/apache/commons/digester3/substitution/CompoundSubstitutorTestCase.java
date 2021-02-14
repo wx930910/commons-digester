@@ -22,6 +22,9 @@ package org.apache.commons.digester3.substitution;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import org.apache.commons.digester3.Substitutor;
 import org.junit.Before;
@@ -29,141 +32,104 @@ import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.AttributesImpl;
 
-public final class CompoundSubstitutorTestCase
-{
+public final class CompoundSubstitutorTestCase {
 
+	public static Substitutor mockSubstitutor1(final String bodyText, final String uri, final String localName,
+			final String type, final String value) {
+		String mockFieldVariableType;
+		String mockFieldVariableUri;
+		String mockFieldVariableLocalName;
+		String mockFieldVariableValue;
+		String mockFieldVariableNewBodyText;
+		Substitutor mockInstance = spy(Substitutor.class);
+		mockFieldVariableNewBodyText = bodyText;
+		mockFieldVariableUri = uri;
+		mockFieldVariableLocalName = localName;
+		mockFieldVariableType = type;
+		mockFieldVariableValue = value;
+		doAnswer((stubInvo) -> {
+			Attributes attributes = stubInvo.getArgument(0);
+			final AttributesImpl attribs = new AttributesImpl(attributes);
+			attribs.addAttribute(mockFieldVariableUri, mockFieldVariableLocalName,
+					mockFieldVariableUri + ":" + mockFieldVariableLocalName, mockFieldVariableType,
+					mockFieldVariableValue);
+			return attribs;
+		}).when(mockInstance).substitute(any(Attributes.class));
+		doAnswer((stubInvo) -> {
+			return mockFieldVariableNewBodyText;
+		}).when(mockInstance).substitute(any(String.class));
+		return mockInstance;
+	}
 
-    private static class SubstitutorStub
-        extends Substitutor
-    {
+	private Attributes attrib;
 
-        private final String newBodyText;
+	private String bodyText;
 
-        private final String uri;
+	@Before
+	public void setUp() {
+		final AttributesImpl aImpl = new AttributesImpl();
+		aImpl.addAttribute("", "b", ":b", "", "bcd");
+		aImpl.addAttribute("", "c", ":c", "", "cde");
+		aImpl.addAttribute("", "d", ":d", "", "def");
 
-        private final String localName;
+		attrib = aImpl;
+		bodyText = "Amazing Body Text!";
+	}
 
-        private final String type;
+	@Test
+	public void testConstructors() {
+		try {
+			new CompoundSubstitutor(null, null);
+			fail();
+		} catch (final IllegalArgumentException e) {
+			// OK
+		}
 
-        private final String value;
+		final Substitutor a = CompoundSubstitutorTestCase.mockSubstitutor1("XYZ", "", "a", "", "abc");
 
-        public SubstitutorStub( final String bodyText, final String uri, final String localName, final String type, final String value )
-        {
-            this.newBodyText = bodyText;
-            this.uri = uri;
-            this.localName = localName;
-            this.type = type;
-            this.value = value;
-        }
+		try {
+			new CompoundSubstitutor(a, null);
+			fail();
+		} catch (final IllegalArgumentException e) {
+			// OK
+		}
 
-        /**
-         * @see org.apache.commons.digester3.Substitutor#substitute(org.xml.sax.Attributes)
-         */
-        @Override
-        public Attributes substitute( final Attributes attributes )
-        {
-            final AttributesImpl attribs = new AttributesImpl( attributes );
-            attribs.addAttribute( uri, localName, uri + ":" + localName, type, value );
-            return attribs;
-        }
+		try {
+			new CompoundSubstitutor(null, a);
+			fail();
+		} catch (final IllegalArgumentException e) {
+			// OK
+		}
+	}
 
-        /**
-         * @see org.apache.commons.digester3.Substitutor#substitute(java.lang.String)
-         */
-        @Override
-        public String substitute( final String bodyText )
-        {
-            return newBodyText;
-        }
+	@Test
+	public void testChaining() {
+		final Substitutor a = CompoundSubstitutorTestCase.mockSubstitutor1("XYZ", "", "a", "", "abc");
+		final Substitutor b = CompoundSubstitutorTestCase.mockSubstitutor1("STU", "", "b", "", "bcd");
 
-    }
+		final Substitutor test = new CompoundSubstitutor(a, b);
 
-    private Attributes attrib;
+		final AttributesImpl attribFixture = new AttributesImpl(attrib);
+		attribFixture.addAttribute("", "a", ":a", "", "abc");
+		attribFixture.addAttribute("", "b", ":b", "", "bcd");
 
-    private String bodyText;
+		assertTrue(areEqual(test.substitute(attrib), attribFixture));
+		assertEquals(test.substitute(bodyText), "STU");
+	}
 
-    @Before
-    public void setUp()
-    {
-        final AttributesImpl aImpl = new AttributesImpl();
-        aImpl.addAttribute( "", "b", ":b", "", "bcd" );
-        aImpl.addAttribute( "", "c", ":c", "", "cde" );
-        aImpl.addAttribute( "", "d", ":d", "", "def" );
+	private boolean areEqual(final Attributes a, final Attributes b) {
+		if (a.getLength() != b.getLength()) {
+			return false;
+		}
 
-        attrib = aImpl;
-        bodyText = "Amazing Body Text!";
-    }
+		boolean success = true;
+		for (int i = 0; i < a.getLength() && success; i++) {
+			success = a.getLocalName(i).equals(b.getLocalName(i)) && a.getQName(i).equals(b.getQName(i))
+					&& a.getType(i).equals(b.getType(i)) && a.getURI(i).equals(b.getURI(i))
+					&& a.getValue(i).equals(b.getValue(i));
+		}
 
-    @Test
-    public void testConstructors()
-    {
-        try
-        {
-            new CompoundSubstitutor( null, null );
-            fail();
-        }
-        catch ( final IllegalArgumentException e )
-        {
-            // OK
-        }
-
-        final Substitutor a = new SubstitutorStub( "XYZ", "", "a", "", "abc" );
-
-        try
-        {
-            new CompoundSubstitutor( a, null );
-            fail();
-        }
-        catch ( final IllegalArgumentException e )
-        {
-            // OK
-        }
-
-        try
-        {
-            new CompoundSubstitutor( null, a );
-            fail();
-        }
-        catch ( final IllegalArgumentException e )
-        {
-            // OK
-        }
-    }
-
-    @Test
-    public void testChaining()
-    {
-        final Substitutor a = new SubstitutorStub( "XYZ", "", "a", "", "abc" );
-        final Substitutor b = new SubstitutorStub( "STU", "", "b", "", "bcd" );
-
-        final Substitutor test = new CompoundSubstitutor( a, b );
-
-        final AttributesImpl attribFixture = new AttributesImpl( attrib );
-        attribFixture.addAttribute( "", "a", ":a", "", "abc" );
-        attribFixture.addAttribute( "", "b", ":b", "", "bcd" );
-
-        assertTrue( areEqual( test.substitute( attrib ), attribFixture ) );
-        assertEquals( test.substitute( bodyText ), "STU" );
-    }
-
-    private boolean areEqual( final Attributes a, final Attributes b )
-    {
-        if ( a.getLength() != b.getLength() )
-        {
-            return false;
-        }
-
-        boolean success = true;
-        for ( int i = 0; i < a.getLength() && success; i++ )
-        {
-            success = a.getLocalName( i ).equals( b.getLocalName( i ) )
-                    && a.getQName( i ).equals( b.getQName( i ) )
-                    && a.getType( i ).equals( b.getType( i ) )
-                    && a.getURI( i ).equals( b.getURI( i ) )
-                    && a.getValue( i ).equals( b.getValue( i ) );
-        }
-
-        return success;
-    }
+		return success;
+	}
 
 }

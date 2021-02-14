@@ -19,43 +19,37 @@
 package org.apache.commons.digester3.plugins;
 
 import org.apache.commons.digester3.Digester;
+import org.apache.commons.digester3.Rule;
 import org.junit.Test;
 
 /**
  * Test cases for Delegate behavior.
  */
 
-public class TestDelegate
-{
-    // --------------------------------------------------------------- Test cases
-    @Test
-    public void testDummy()
-    {
-        // it is an error if a TestSuite doesn't have at least one test,
-        // so here is one...
-    }
+public class TestDelegate {
+	// --------------------------------------------------------------- Test cases
+	@Test
+	public void testDummy() {
+		// it is an error if a TestSuite doesn't have at least one test,
+		// so here is one...
+	}
 
-    public void ignoretestDelegate()
-        throws Exception
-    {
-        // this method tests the Delegate functionality by capturing all
-        // data below the specified pattern, and printing it to stdout.
-        // I can't for the moment think how to turn this into a unit test,
-        // so this test is disabled.
-        final Digester digester = new Digester();
-        final PluginRules rc = new PluginRules();
-        digester.setRules( rc );
+	public void ignoretestDelegate() throws Exception {
+		// this method tests the Delegate functionality by capturing all
+		// data below the specified pattern, and printing it to stdout.
+		// I can't for the moment think how to turn this into a unit test,
+		// so this test is disabled.
+		final Digester digester = new Digester();
+		final PluginRules rc = new PluginRules();
+		digester.setRules(rc);
 
-        final DumperRule dr = new DumperRule();
-        digester.addRule( "root", dr );
+		final Rule dr = DumperRule.mockRule1();
+		digester.addRule("root", dr);
 
-        try
-        {
-            digester.parse( Utils.getInputStream( this, "test1.xml" ) );
-        }
-        catch ( final Exception e )
-        {
-            throw e;
-        }
-    }
+		try {
+			digester.parse(Utils.getInputStream(this, "test1.xml"));
+		} catch (final Exception e) {
+			throw e;
+		}
+	}
 }
