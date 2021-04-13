@@ -18,174 +18,147 @@
 
 package org.apache.commons.digester3;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.List;
 
-import org.apache.commons.digester3.Rule;
 import org.apache.commons.digester3.binder.RuleProvider;
 import org.xml.sax.Attributes;
 
 /**
  * <p>
- * This rule implementation is intended to help test digester. The idea is that you can test which rule matches by
- * looking at the identifier.
+ * This rule implementation is intended to help test digester. The idea is that
+ * you can test which rule matches by looking at the identifier.
  * </p>
  * 
  * @author Robert Burrell Donkin
  */
 
-public class TestRule
-    extends Rule
-{
+public class TestRule extends Rule {
 
-    // ----------------------------------------------------- Instance Variables
+	// ----------------------------------------------------- Instance Variables
 
-    /** String identifing this particular <code>TestRule</code> */
-    private final String identifier;
+	public static RuleProvider<TestRule> mockRuleProvider1(String identifier, List<Rule> callOrder) {
+		String mockFieldVariableIdentifier;
+		List<Rule> mockFieldVariableCallOrder;
+		RuleProvider<TestRule> mockInstance = mock(RuleProvider.class);
+		mockFieldVariableIdentifier = identifier;
+		mockFieldVariableCallOrder = callOrder;
+		when(mockInstance.get()).thenAnswer((stubInvo) -> {
+			TestRule testRule = new TestRule(mockFieldVariableIdentifier);
+			testRule.setOrder(mockFieldVariableCallOrder);
+			return testRule;
+		});
+		return mockInstance;
+	}
 
-    /** Used when testing body text */
-    private String bodyText;
+	/** String identifing this particular <code>TestRule</code> */
+	private final String identifier;
 
-    /** Used when testing call orders */
-    private List<Rule> order;
+	/** Used when testing body text */
+	private String bodyText;
 
-    // ----------------------------------------------------------- Constructors
+	/** Used when testing call orders */
+	private List<Rule> order;
 
-    /**
-     * Base constructor.
-     * 
-     * @param identifier Used to tell which TestRule is which
-     */
-    public TestRule( String identifier )
-    {
+	// ----------------------------------------------------------- Constructors
 
-        this.identifier = identifier;
-    }
+	/**
+	 * Base constructor.
+	 * 
+	 * @param identifier Used to tell which TestRule is which
+	 */
+	public TestRule(String identifier) {
 
-    /**
-     * Constructor sets namespace URI.
-     * 
-     * @param identifier Used to tell which TestRule is which
-     * @param namespaceURI Set rule namespace
-     */
-    public TestRule( String identifier, String namespaceURI )
-    {
+		this.identifier = identifier;
+	}
 
-        this.identifier = identifier;
-        setNamespaceURI( namespaceURI );
+	/**
+	 * Constructor sets namespace URI.
+	 * 
+	 * @param identifier   Used to tell which TestRule is which
+	 * @param namespaceURI Set rule namespace
+	 */
+	public TestRule(String identifier, String namespaceURI) {
 
-    }
+		this.identifier = identifier;
+		setNamespaceURI(namespaceURI);
 
-    // ------------------------------------------------ Rule Implementation
+	}
 
-    /**
-     * 'Begin' call.
-     */
-    @Override
-    public void begin( String namespace, String name, Attributes attributes )
-        throws Exception
-    {
-        appendCall();
-    }
+	// ------------------------------------------------ Rule Implementation
 
-    /**
-     * 'Body' call.
-     */
-    @Override
-    public void body( String namespace, String name, String text )
-        throws Exception
-    {
-        this.bodyText = text;
-        appendCall();
-    }
+	/**
+	 * 'Begin' call.
+	 */
+	@Override
+	public void begin(String namespace, String name, Attributes attributes) throws Exception {
+		appendCall();
+	}
 
-    /**
-     * 'End' call.
-     */
-    @Override
-    public void end( String namespace, String name )
-        throws Exception
-    {
-        appendCall();
-    }
+	/**
+	 * 'Body' call.
+	 */
+	@Override
+	public void body(String namespace, String name, String text) throws Exception {
+		this.bodyText = text;
+		appendCall();
+	}
 
-    // ------------------------------------------------ Methods
+	/**
+	 * 'End' call.
+	 */
+	@Override
+	public void end(String namespace, String name) throws Exception {
+		appendCall();
+	}
 
-    /**
-     * If a list has been set, append this to the list.
-     */
-    protected void appendCall()
-    {
-        if ( order != null ) {
-            order.add( this );
-        }
-    }
+	// ------------------------------------------------ Methods
 
-    /**
-     * Get the body text that was set.
-     */
-    public String getBodyText()
-    {
-        return bodyText;
-    }
+	/**
+	 * If a list has been set, append this to the list.
+	 */
+	protected void appendCall() {
+		if (order != null) {
+			order.add(this);
+		}
+	}
 
-    /**
-     * Get the identifier associated with this test.
-     */
-    public String getIdentifier()
-    {
-        return identifier;
-    }
+	/**
+	 * Get the body text that was set.
+	 */
+	public String getBodyText() {
+		return bodyText;
+	}
 
-    /**
-     * Get call order list.
-     */
-    public List<Rule> getOrder()
-    {
-        return order;
-    }
+	/**
+	 * Get the identifier associated with this test.
+	 */
+	public String getIdentifier() {
+		return identifier;
+	}
 
-    /**
-     * Set call order list
-     */
-    public void setOrder( List<Rule> order )
-    {
-        this.order = order;
-    }
+	/**
+	 * Get call order list.
+	 */
+	public List<Rule> getOrder() {
+		return order;
+	}
 
-    /**
-     * Return the identifier.
-     */
-    @Override
-    public String toString()
-    {
-        return identifier;
-    }
+	/**
+	 * Set call order list
+	 */
+	public void setOrder(List<Rule> order) {
+		this.order = order;
+	}
 
-    public static class TestRuleProvider implements RuleProvider<TestRule>
-    {
-
-        private final String identifier;
-
-        private final List<Rule> callOrder;
-
-        public TestRuleProvider( String identifier )
-        {
-            this( identifier, null );
-        }
-
-        public TestRuleProvider( String identifier, List<Rule> callOrder )
-        {
-            this.identifier = identifier;
-            this.callOrder = callOrder;
-        }
-
-        public TestRule get()
-        {
-            TestRule testRule = new TestRule( identifier );
-            testRule.setOrder( callOrder );
-            return testRule;
-        }
-
-    }
+	/**
+	 * Return the identifier.
+	 */
+	@Override
+	public String toString() {
+		return identifier;
+	}
 
 }
