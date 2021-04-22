@@ -17,50 +17,50 @@
  */
 package org.apache.commons.digester3.plugins;
 
-import org.xml.sax.Attributes;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
+
 import org.apache.commons.digester3.Rule;
+import org.xml.sax.Attributes;
 
 /**
  * Demonstrates the behavior of the Delegate interface.
  */
-public class DumperRule
-    extends Rule
-{
-    @Override
-    public void begin( final String namespace, final String name, final Attributes attributes )
-        throws Exception
-    {
-        System.out.print( "<" );
-        System.out.print( name );
-
-        final int nAttributes = attributes.getLength();
-        for ( int i = 0; i < nAttributes; ++i )
-        {
-            final String key = attributes.getQName( i );
-            final String value = attributes.getValue( i );
-            System.out.print( " " );
-            System.out.print( key );
-            System.out.print( "=" );
-            System.out.print( "'" );
-            System.out.print( value );
-            System.out.print( "'" );
-        }
-        System.out.println( ">" );
-    }
-
-    @Override
-    public void body( final String namespace, final String name, final String text )
-        throws Exception
-    {
-        System.out.print( text );
-    }
-
-    @Override
-    public void end( final String namespace, final String name )
-        throws Exception
-    {
-        System.out.print( "</" );
-        System.out.print( name );
-        System.out.println( ">" );
-    }
+public class DumperRule {
+	public static Rule mockRule1() throws Exception {
+		Rule mockInstance = spy(Rule.class);
+		doAnswer((stubInvo) -> {
+			String name = stubInvo.getArgument(1);
+			Attributes attributes = stubInvo.getArgument(2);
+			System.out.print("<");
+			System.out.print(name);
+			final int nAttributes = attributes.getLength();
+			for (int i = 0; i < nAttributes; ++i) {
+				final String key = attributes.getQName(i);
+				final String value = attributes.getValue(i);
+				System.out.print(" ");
+				System.out.print(key);
+				System.out.print("=");
+				System.out.print("'");
+				System.out.print(value);
+				System.out.print("'");
+			}
+			System.out.println(">");
+			return null;
+		}).when(mockInstance).begin(any(String.class), any(String.class), any(Attributes.class));
+		doAnswer((stubInvo) -> {
+			String text = stubInvo.getArgument(2);
+			System.out.print(text);
+			return null;
+		}).when(mockInstance).body(any(String.class), any(String.class), any(String.class));
+		doAnswer((stubInvo) -> {
+			String name = stubInvo.getArgument(1);
+			System.out.print("</");
+			System.out.print(name);
+			System.out.println(">");
+			return null;
+		}).when(mockInstance).end(any(String.class), any(String.class));
+		return mockInstance;
+	}
 }
